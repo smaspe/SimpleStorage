@@ -15,6 +15,9 @@ import android.os.Parcel;
 public class Storable {
 
 	private long id = -1;
+	public final long getId() {
+		return id;
+	}
 
 	public void save(Context context) {
 		Map<String, Object> mapRepr = asMap();
