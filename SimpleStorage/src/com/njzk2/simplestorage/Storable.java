@@ -15,6 +15,7 @@ import android.os.Parcel;
 public class Storable {
 
 	private long id = -1;
+
 	public final long getId() {
 		return id;
 	}
@@ -51,7 +52,8 @@ public class Storable {
 		for (Field field : fields) {
 			try {
 				field.setAccessible(true);
-				res.put(field.getName(), field.get(this));
+				TypeHandler handler = TypeHandler.getHandler(field.getType());
+				res.put(field.getName(), handler.getSQLValue(field.get(this)));
 			} catch (IllegalArgumentException e) {
 				e.printStackTrace();
 			} catch (IllegalAccessException e) {
