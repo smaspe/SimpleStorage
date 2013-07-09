@@ -19,10 +19,9 @@ public class DataProvider extends ContentProvider {
 	private static final int OBJECTS = 1;
 	private static final int OBJECT_ID = OBJECTS + 1;
 
-	private static final String AUTHORITY = "com.njzk2.simplestorage";
+	private static String AUTHORITY;
 
-	public static final Uri DATA_CONTENT_URI = Uri.parse("content://"
-			+ AUTHORITY);
+	public static Uri DATA_CONTENT_URI;
 
 	private static final UriMatcher sURIMatcher = new UriMatcher(
 			UriMatcher.NO_MATCH);
@@ -36,17 +35,13 @@ public class DataProvider extends ContentProvider {
 	@Override
 	public boolean onCreate() {
 		try {
+			AUTHORITY = getContext().getPackageName();
+			DATA_CONTENT_URI = Uri.parse("content://" + AUTHORITY);
 			mDatabase = new Database(getContext());
 		} catch (NameNotFoundException e) {
 			e.printStackTrace();
 		}
 		return false;
-	}
-
-	@Override
-	public int delete(Uri arg0, String arg1, String[] arg2) {
-		// TODO Auto-generated method stub
-		return 0;
 	}
 
 	@Override
@@ -84,7 +79,6 @@ public class DataProvider extends ContentProvider {
 		switch (uriType) {
 		case OBJECT_ID:
 			queryBuilder.appendWhere(BaseColumns._ID + "=" + segments.pop());
-			// TODO use ? and selectionArgs
 			// No break
 		case OBJECTS:
 			// Set the table
@@ -104,26 +98,53 @@ public class DataProvider extends ContentProvider {
 		int uriType = sURIMatcher.match(uri);
 		SQLiteDatabase sqlDB = mDatabase.getWritableDatabase();
 		int rowsUpdated = 0;
+		String table;
 		switch (uriType) {
 		case OBJECTS:
-			rowsUpdated = sqlDB.update(uri.getLastPathSegment(), values,
-					selection, selectionArgs);
+			table = uri.getLastPathSegment();
 			break;
 		case OBJECT_ID:
-			String id = uri.getLastPathSegment();
-			String table = uri.getPathSegments().get(
-					uri.getPathSegments().size() - 2);
-			String query = BaseColumns._ID + "=" + id;
-			if (!TextUtils.isEmpty(selection)) {
-				query += " and " + selection;
-			}
-			rowsUpdated = sqlDB.update(table, values, query, selectionArgs);
+			table = uri.getPathSegments().get(uri.getPathSegments().size() - 2);
+			selection = getQuery(uri, selection);
 			break;
 		default:
 			throw new IllegalArgumentException("Unknown URI: " + uri);
 		}
+		rowsUpdated = sqlDB.update(table, values, selection, selectionArgs);
 		getContext().getContentResolver().notifyChange(uri, null);
 		return rowsUpdated;
+	}
+
+	@Override
+	public int delete(Uri uri, String selection, String[] selectionArgs) {
+
+		int uriType = sURIMatcher.match(uri);
+		SQLiteDatabase sqlDB = mDatabase.getWritableDatabase();
+		int rowsDeleted = 0;
+		String table;
+		switch (uriType) {
+		case OBJECTS:
+			table = uri.getLastPathSegment();
+			break;
+		case OBJECT_ID:
+			table = uri.getPathSegments().get(uri.getPathSegments().size() - 2);
+			selection = getQuery(uri, selection);
+			break;
+		default:
+			throw new IllegalArgumentException("Unknown URI: " + uri);
+		}
+		rowsDeleted = sqlDB.delete(table, selection, selectionArgs);
+		getContext().getContentResolver().notifyChange(uri, null);
+		return rowsDeleted;
+	}
+
+	private String getQuery(Uri uri, String selection) {
+		String id = uri.getLastPathSegment();
+		String query = BaseColumns._ID + "=" + id;
+		if (!TextUtils.isEmpty(selection)) {
+			query += " and " + selection;
+		}
+		return query;
 	}
 
 }
