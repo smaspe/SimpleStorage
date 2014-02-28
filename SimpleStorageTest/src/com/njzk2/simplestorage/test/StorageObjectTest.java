@@ -12,6 +12,7 @@ public class StorageObjectTest extends AndroidTestCase {
 	@Override
 	protected void setUp() throws Exception {
 		super.setUp();
+		Database.TABLES.clear();
 		Database.TABLES.add(StorageObject.class);
 
 	}
@@ -33,11 +34,17 @@ public class StorageObjectTest extends AndroidTestCase {
 		object = StorageObject.getById(mContext, StorageObject.class, object.getId());
 		assertEquals("Name not equal", "Toto", object.name);
 		assertEquals("Number not equal", 42, object.number);
+		assertFalse("Failed to load", object.getId() == -1);
 	}
-
 	@Override
 	protected void tearDown() throws Exception {
 		super.tearDown();
+		getContext().getContentResolver().delete(StorageObject.getPath(StorageObject.class), null, null);
+	}
+	@Override
+	protected void finalize() throws Throwable {
+		super.finalize();
+
 		for (String dbName : mContext.databaseList()) {
 			Log.d(TAG, "delete " + dbName);
 			mContext.deleteDatabase(dbName);
