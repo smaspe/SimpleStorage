@@ -1,10 +1,12 @@
 package com.njzk2.simplestorage;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import android.content.Context;
 import android.content.pm.PackageManager.NameNotFoundException;
+import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
@@ -25,13 +27,20 @@ public class Database extends SQLiteOpenHelper {
 
 	@Override
 	public void onUpgrade(SQLiteDatabase db, int arg1, int arg2) {
+		// Make sure all table exist
+		onCreate(db);
+		// Upgrade if necessary
 		for (Class<? extends Storable> table : TABLES) {
-			try {
-				db.execSQL("drop table " + SQLHelper.getTableName(table));
-			} catch (Exception e) {
-				e.printStackTrace();
+			String tableName = SQLHelper.getTableName(table);
+			Cursor c = db.query(tableName, null, null, null, null, null, null, "0");
+			List<String> columnNames = Arrays.asList(c.getColumnNames());
+			for (String sql : new SQLSchema(table).toAlterStrings(columnNames)) {
+				try {
+					db.execSQL(sql);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
 			}
 		}
-		onCreate(db);
 	}
 }
