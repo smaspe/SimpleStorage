@@ -19,29 +19,29 @@ public class DataProvider extends ContentProvider {
 	private static final int OBJECTS = 1;
 	private static final int OBJECT_ID = OBJECTS + 1;
 
-	private static String AUTHORITY;
+	private static String AUTHORITY = null;
 
 	public static Uri DATA_CONTENT_URI;
 
-	private static final UriMatcher sURIMatcher = new UriMatcher(
-			UriMatcher.NO_MATCH);
-	static {
-		sURIMatcher.addURI(AUTHORITY, "*", OBJECTS);
-		sURIMatcher.addURI(AUTHORITY, "*/#", OBJECT_ID);
-	}
+	private static UriMatcher sURIMatcher;
 
 	Database mDatabase;
 
 	@Override
 	public boolean onCreate() {
-		try {
-			AUTHORITY = getContext().getPackageName();
-			DATA_CONTENT_URI = Uri.parse("content://" + AUTHORITY);
-			mDatabase = new Database(getContext());
-		} catch (NameNotFoundException e) {
-			e.printStackTrace();
+		if (AUTHORITY == null) {
+			try {
+				AUTHORITY = getContext().getPackageName();
+				sURIMatcher = new UriMatcher(UriMatcher.NO_MATCH);
+				sURIMatcher.addURI(AUTHORITY, "*", OBJECTS);
+				sURIMatcher.addURI(AUTHORITY, "*/#", OBJECT_ID);
+				DATA_CONTENT_URI = Uri.parse("content://" + AUTHORITY);
+				mDatabase = new Database(getContext());
+			} catch (NameNotFoundException e) {
+				e.printStackTrace();
+			}
 		}
-		return false;
+		return true;
 	}
 
 	@Override
@@ -67,8 +67,7 @@ public class DataProvider extends ContentProvider {
 	}
 
 	@Override
-	public Cursor query(Uri uri, String[] projection, String selection,
-			String[] selectionArgs, String sortOrder) {
+	public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs, String sortOrder) {
 
 		// Using SQLiteQueryBuilder instead of query() method
 		SQLiteQueryBuilder queryBuilder = new SQLiteQueryBuilder();
@@ -85,15 +84,14 @@ public class DataProvider extends ContentProvider {
 			queryBuilder.setTables(segments.pop());
 			break;
 		}
-		Cursor cursor = queryBuilder.query(mDatabase.getReadableDatabase(),
-				projection, selection, selectionArgs, null, null, sortOrder);
+		Cursor cursor = queryBuilder.query(mDatabase.getReadableDatabase(), projection, selection, selectionArgs, null,
+				null, sortOrder);
 		cursor.setNotificationUri(getContext().getContentResolver(), uri);
 		return cursor;
 	}
 
 	@Override
-	public int update(Uri uri, ContentValues values, String selection,
-			String[] selectionArgs) {
+	public int update(Uri uri, ContentValues values, String selection, String[] selectionArgs) {
 
 		int uriType = sURIMatcher.match(uri);
 		SQLiteDatabase sqlDB = mDatabase.getWritableDatabase();

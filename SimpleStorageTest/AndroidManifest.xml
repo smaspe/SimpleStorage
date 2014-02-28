@@ -17,7 +17,7 @@
 
         <provider
             android:name="com.njzk2.simplestorage.DataProvider"
-            android:authorities="com.njzk2.simplestorage" />
+            android:authorities="com.njzk2.simplestorage.test" />
     </application>
 
 </manifest>
