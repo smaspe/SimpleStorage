@@ -4,18 +4,24 @@ import java.util.HashMap;
 import java.util.Map;
 
 import android.database.Cursor;
+import android.util.Log;
 
-public class TypeHandler {
+public abstract class TypeHandler {
 
 	private static Map<Class<?>, TypeHandler> HANDLERS = new HashMap<Class<?>, TypeHandler>();
-	private static TypeHandler DEFAULT_HANDLER = new TypeHandler();
+	private static TypeHandler DEFAULT_HANDLER = new StringHandler();
 	static {
 		HANDLERS.put(int.class, new IntHandler());
+		HANDLERS.put(long.class, new LongHandler());
+		HANDLERS.put(boolean.class, new BooleanHandler());
+		HANDLERS.put(String.class, new StringHandler());
 	}
+
 	public static TypeHandler getHandler(Class<?> type) {
 		if (HANDLERS.containsKey(type)) {
 			return HANDLERS.get(type);
 		}
+		Log.w("TypeHandler", "No handler found for " + type.getCanonicalName());
 		return DEFAULT_HANDLER;
 	}
 
@@ -27,7 +33,5 @@ public class TypeHandler {
 		return object;
 	}
 
-	public Object fromCursor(String name, Cursor content) {
-		return content.getString(content.getColumnIndex(name));
-	}
+	public abstract Object fromCursor(String name, Cursor content);
 }

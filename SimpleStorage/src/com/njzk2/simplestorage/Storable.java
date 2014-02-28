@@ -4,13 +4,13 @@ import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.njzk2.simplestorage.handler.TypeHandler;
-
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Parcel;
+
+import com.njzk2.simplestorage.handler.TypeHandler;
 
 public class Storable {
 
@@ -26,6 +26,7 @@ public class Storable {
 		p.writeMap(mapRepr);
 		p.setDataPosition(0);
 		ContentValues values = ContentValues.CREATOR.createFromParcel(p);
+		p.recycle();
 		if (id == -1) {
 			Uri insertUri = context.getContentResolver().insert(
 					getPath(getClass()), values);
@@ -64,6 +65,7 @@ public class Storable {
 	}
 
 	private void loadCursor(Cursor content) {
+		id = content.getLong(content.getColumnIndex("_id"));
 		Field[] fields = SQLHelper.getFields(getClass());
 		for (Field field : fields) {
 			TypeHandler handler = TypeHandler.getHandler(field.getType());
@@ -77,6 +79,10 @@ public class Storable {
 		}
 	}
 
+	public static int delete(Context context, Class<? extends Storable> clazz) {
+		return context.getContentResolver().delete(getPath(clazz), null, null);
+	}
+
 	public static <T extends Storable> T getById(Context context,
 			Class<T> clazz, long id) {
 		try {
@@ -85,8 +91,26 @@ public class Storable {
 					getPath(clazz, id), null, null, null, null);
 			if (content.moveToFirst()) {
 				result.loadCursor(content);
+				return result;
 			}
-			return result;
+		} catch (InstantiationException e) {
+			e.printStackTrace();
+		} catch (IllegalAccessException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	public static <T extends Storable> T getBy(Context context,
+			Class<T> clazz, String where, String... params) {
+		try {
+			T result = clazz.newInstance();
+			Cursor content = context.getContentResolver().query(
+					getPath(clazz), null, where, params, null);
+			if (content.moveToFirst()) {
+				result.loadCursor(content);
+				return result;
+			}
 		} catch (InstantiationException e) {
 			e.printStackTrace();
 		} catch (IllegalAccessException e) {
