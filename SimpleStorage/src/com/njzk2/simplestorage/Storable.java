@@ -1,7 +1,9 @@
 package com.njzk2.simplestorage;
 
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import android.content.ContentValues;
@@ -117,6 +119,25 @@ public class Storable {
 			e.printStackTrace();
 		}
 		return null;
+	}
+
+	public static <T extends Storable> List<T> findBy(Context context,
+			Class<T> clazz, String where, String... params) {
+		List<T> res = new ArrayList<T>();
+		try {
+			Cursor content = context.getContentResolver().query(
+					getPath(clazz), null, where, params, null);
+			while (content.moveToNext()) {
+				T result = clazz.newInstance();
+				result.loadCursor(content);
+				res.add(result);
+			}
+		} catch (InstantiationException e) {
+			e.printStackTrace();
+		} catch (IllegalAccessException e) {
+			e.printStackTrace();
+		}
+		return res;
 	}
 
 	public static Uri getPath(Class<? extends Storable> clazz) {
