@@ -15,6 +15,7 @@ public abstract class TypeHandler {
 		HANDLERS.put(long.class, new LongHandler());
 		HANDLERS.put(boolean.class, new BooleanHandler());
 		HANDLERS.put(String.class, new StringHandler());
+		HANDLERS.put(byte[].class, new BytesHandler());
 	}
 
 	public static TypeHandler getHandler(Class<?> type) {

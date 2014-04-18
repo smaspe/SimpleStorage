@@ -1,0 +1,16 @@
+package com.njzk2.simplestorage.handler;
+
+import android.database.Cursor;
+
+public class BytesHandler extends TypeHandler {
+
+	@Override
+	public String getSQLType() {
+		return "BLOB";
+	}
+	@Override
+	public Object fromCursor(String name, Cursor content) {
+		return content.getBlob(content.getColumnIndex(name));
+	}
+
+}
