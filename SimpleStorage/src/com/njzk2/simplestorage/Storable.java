@@ -9,16 +9,20 @@ import java.util.Map;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.os.Parcel;
+import android.provider.BaseColumns;
+import android.util.Log;
 
 import com.njzk2.simplestorage.handler.TypeHandler;
 
 public class Storable {
 
+	private static final String BY_ID = BaseColumns._ID + "= ?";
 	private long id = -1;
 
-	public final long getId() {
+	public final long getRowId() {
 		return id;
 	}
 
@@ -29,33 +33,33 @@ public class Storable {
 		p.setDataPosition(0);
 		ContentValues values = ContentValues.CREATOR.createFromParcel(p);
 		p.recycle();
+		SQLiteDatabase database = Database.getInstance(context).getWritableDatabase();
 		if (id == -1) {
-			Uri insertUri = context.getContentResolver().insert(
-					getPath(getClass()), values);
-			id = Long.parseLong(insertUri.getLastPathSegment());
+			id = database.insert(SQLHelper.getTableName(getClass()), null, values);
 		} else {
-			context.getContentResolver().update(getPath(getClass(), id),
-					values, null, null);
+			database.update(SQLHelper.getTableName(getClass()), values, BY_ID,
+					new String[] { String.valueOf(id) });
 			// TODO test return value and log error or something
 		}
 	}
 
 	public boolean delete(Context context) {
-		boolean result = context.getContentResolver().delete(
-				getPath(getClass(), id), null, null) > 0;
+		boolean result = Database.getInstance(context).getWritableDatabase()
+				.delete(SQLHelper.getTableName(getClass()), BY_ID, new String[] { String.valueOf(id) }) > 0;
 		if (result) {
 			id = -1;
 		}
 		return result;
 	}
 
+	@SuppressWarnings("unchecked")
 	private Map<String, Object> asMap() {
 		Map<String, Object> res = new HashMap<String, Object>();
 		Field[] fields = SQLHelper.getFields(getClass());
 		for (Field field : fields) {
 			try {
 				field.setAccessible(true);
-				TypeHandler handler = TypeHandler.getHandler(field.getType());
+				TypeHandler<Object> handler = (TypeHandler<Object>) TypeHandler.getHandler(field);
 				res.put(field.getName(), handler.getSQLValue(field.get(this)));
 			} catch (IllegalArgumentException e) {
 				e.printStackTrace();
@@ -70,30 +74,32 @@ public class Storable {
 		id = content.getLong(content.getColumnIndex("_id"));
 		Field[] fields = SQLHelper.getFields(getClass());
 		for (Field field : fields) {
-			TypeHandler handler = TypeHandler.getHandler(field.getType());
+			TypeHandler<?> handler = TypeHandler.getHandler(field);
 			try {
+				field.setAccessible(true);
 				field.set(this, handler.fromCursor(field.getName(), content));
-			} catch (IllegalArgumentException e) {
-				e.printStackTrace();
-			} catch (IllegalAccessException e) {
+			} catch (Exception e) {
+				Log.e(getClass().getSimpleName(), "Exception with field " + field);
 				e.printStackTrace();
 			}
 		}
 	}
 
 	public static int delete(Context context, Class<? extends Storable> clazz) {
-		return context.getContentResolver().delete(getPath(clazz), null, null);
+		return Database.getInstance(context).getWritableDatabase().delete(SQLHelper.getTableName(clazz), null, null);
 	}
 
 	public static <T extends Storable> T getById(Context context,
 			Class<T> clazz, long id) {
 		try {
 			T result = clazz.newInstance();
-			Cursor content = context.getContentResolver().query(
-					getPath(clazz, id), null, null, null, null);
+			Cursor content = list(context, clazz, BY_ID, String.valueOf(id));
 			if (content.moveToFirst()) {
 				result.loadCursor(content);
+				content.close();
 				return result;
+			} else {
+				content.close();
 			}
 		} catch (InstantiationException e) {
 			e.printStackTrace();
@@ -107,11 +113,14 @@ public class Storable {
 			Class<T> clazz, String where, String... params) {
 		try {
 			T result = clazz.newInstance();
-			Cursor content = context.getContentResolver().query(
-					getPath(clazz), null, where, params, null);
+
+			Cursor content = list(context, clazz, where, params);
 			if (content.moveToFirst()) {
 				result.loadCursor(content);
+				content.close();
 				return result;
+			} else {
+				content.close();
 			}
 		} catch (InstantiationException e) {
 			e.printStackTrace();
@@ -125,13 +134,13 @@ public class Storable {
 			Class<T> clazz, String where, String... params) {
 		List<T> res = new ArrayList<T>();
 		try {
-			Cursor content = context.getContentResolver().query(
-					getPath(clazz), null, where, params, null);
+			Cursor content = list(context, clazz, where, params);
 			while (content.moveToNext()) {
 				T result = clazz.newInstance();
 				result.loadCursor(content);
 				res.add(result);
 			}
+			content.close();
 		} catch (InstantiationException e) {
 			e.printStackTrace();
 		} catch (IllegalAccessException e) {
@@ -151,8 +160,8 @@ public class Storable {
 						SQLHelper.getTableName(clazz)), String.valueOf(id));
 	}
 
-	public static Cursor list(Context context, Class<? extends Storable> clazz) {
-		return context.getContentResolver().query(getPath(clazz), null, null,
-				null, null);
+	public static Cursor list(Context context, Class<? extends Storable> clazz, String where, String... params) {
+		return Database.getInstance(context).getWritableDatabase()
+				.query(SQLHelper.getTableName(clazz), null, where, params, null, null, null);
 	}
 }

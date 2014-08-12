@@ -4,8 +4,8 @@ import java.util.Stack;
 
 import android.content.ContentProvider;
 import android.content.ContentValues;
+import android.content.Context;
 import android.content.UriMatcher;
-import android.content.pm.PackageManager.NameNotFoundException;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteQueryBuilder;
@@ -30,18 +30,20 @@ public class DataProvider extends ContentProvider {
 	@Override
 	public boolean onCreate() {
 		if (AUTHORITY == null) {
-			try {
-				AUTHORITY = getContext().getPackageName();
-				sURIMatcher = new UriMatcher(UriMatcher.NO_MATCH);
-				sURIMatcher.addURI(AUTHORITY, "*", OBJECTS);
-				sURIMatcher.addURI(AUTHORITY, "*/#", OBJECT_ID);
-				DATA_CONTENT_URI = Uri.parse("content://" + AUTHORITY);
-				mDatabase = new Database(getContext());
-			} catch (NameNotFoundException e) {
-				e.printStackTrace();
-			}
+			initAuth(getContext());
+		}
+		if (mDatabase == null) {
+			mDatabase = Database.getInstance(getContext());
 		}
 		return true;
+	}
+
+	private static void initAuth(Context context) {
+		AUTHORITY = context.getPackageName();
+		sURIMatcher = new UriMatcher(UriMatcher.NO_MATCH);
+		sURIMatcher.addURI(AUTHORITY, "*", OBJECTS);
+		sURIMatcher.addURI(AUTHORITY, "*/#", OBJECT_ID);
+		DATA_CONTENT_URI = Uri.parse("content://" + AUTHORITY);
 	}
 
 	@Override

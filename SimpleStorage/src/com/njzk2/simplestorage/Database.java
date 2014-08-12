@@ -13,7 +13,18 @@ import android.database.sqlite.SQLiteOpenHelper;
 public class Database extends SQLiteOpenHelper {
 	public static final List<Class<? extends Storable>> TABLES = new ArrayList<Class<? extends Storable>>();
 
-	public Database(Context context) throws NameNotFoundException {
+	private static Database instance = null;
+	public static Database getInstance(Context context) {
+		if (instance == null) {
+			try {
+				instance = new Database(context.getApplicationContext());
+			} catch (NameNotFoundException e) {
+				e.printStackTrace();
+			}
+		}
+		return instance;
+	}
+	private Database(Context context) throws NameNotFoundException {
 		super(context, "simplestorage", null, context.getPackageManager()
 				.getPackageInfo(context.getPackageName(), 0).versionCode);
 	}
@@ -21,6 +32,7 @@ public class Database extends SQLiteOpenHelper {
 	@Override
 	public void onCreate(SQLiteDatabase db) {
 		for (Class<? extends Storable> table : TABLES) {
+			// TODO assert that the class has the mandatory empty constructor
 			db.execSQL(new SQLSchema(table).toString());
 		}
 	}
