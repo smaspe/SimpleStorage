@@ -1,3 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <lint>
+    <issue id="Registered">
+        <ignore path="src/com/njzk2/simplestorage/DataProvider.java" />
+    </issue>
 </lint>
