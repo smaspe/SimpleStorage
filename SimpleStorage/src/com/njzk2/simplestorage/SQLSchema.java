@@ -10,19 +10,19 @@ import java.util.Map.Entry;
 import com.njzk2.simplestorage.handler.TypeHandler;
 
 public class SQLSchema {
-	private Map<String, TypeHandler> fields = new HashMap<String, TypeHandler>();
+	private Map<String, TypeHandler<?>> fields = new HashMap<String, TypeHandler<?>>();
 
 	private Class<? extends Storable> clazz;
 
 	public SQLSchema(Class<? extends Storable> clazz) {
 		this.clazz = clazz;
-		Field[] fields = SQLHelper.getFields(clazz);
-		for (Field field : fields) {
-			addField(field.getName(), TypeHandler.getHandler(field.getType()));
+		Field[] clazzFields = SQLHelper.getFields(clazz);
+		for (Field field : clazzFields) {
+			addField(field.getName(), TypeHandler.getHandler(field));
 		}
 	}
 
-	private void addField(String fieldName, TypeHandler fieldHandler) {
+	private void addField(String fieldName, TypeHandler<?> fieldHandler) {
 		fields.put(fieldName, fieldHandler);
 	}
 
@@ -30,7 +30,7 @@ public class SQLSchema {
 		StringBuilder builder = new StringBuilder("create table if not exists ");
 		builder.append(SQLHelper.getTableName(clazz));
 		builder.append(" (_id integer primary key autoincrement");
-		for (Entry<String, TypeHandler> field : fields.entrySet()) {
+		for (Entry<String, TypeHandler<?>> field : fields.entrySet()) {
 			builder.append(',').append(field.getKey());
 			builder.append(' ').append(field.getValue().getSQLType());
 		}
@@ -40,7 +40,7 @@ public class SQLSchema {
 
 	public Collection<String> toAlterStrings(Collection<String> columns) {
 		Collection<String> alterStrings = new ArrayList<String>();
-		for (Entry<String, TypeHandler> field : fields.entrySet()) {
+		for (Entry<String, TypeHandler<?>> field : fields.entrySet()) {
 			if (columns.contains(field.getKey())) {
 				// It is not possible to alter an existing column
 				continue;

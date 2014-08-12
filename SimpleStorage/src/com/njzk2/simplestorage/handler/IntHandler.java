@@ -2,7 +2,7 @@ package com.njzk2.simplestorage.handler;
 
 import android.database.Cursor;
 
-public class IntHandler extends TypeHandler {
+public class IntHandler extends TypeHandler<Integer> {
 
 	@Override
 	public String getSQLType() {

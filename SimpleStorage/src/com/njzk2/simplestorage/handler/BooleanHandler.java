@@ -2,7 +2,7 @@ package com.njzk2.simplestorage.handler;
 
 import android.database.Cursor;
 
-public class BooleanHandler extends TypeHandler {
+public class BooleanHandler extends TypeHandler<Boolean> {
 
 	@Override
 	public Boolean fromCursor(String name, Cursor content) {

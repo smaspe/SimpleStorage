@@ -2,7 +2,7 @@ package com.njzk2.simplestorage.handler;
 
 import android.database.Cursor;
 
-public class LongHandler extends TypeHandler {
+public class LongHandler extends TypeHandler<Long> {
 
 	@Override
 	public String getSQLType() {
