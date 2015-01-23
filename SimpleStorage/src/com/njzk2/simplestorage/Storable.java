@@ -70,7 +70,7 @@ public class Storable {
 		return res;
 	}
 
-	private void loadCursor(Cursor content) {
+	protected void loadCursor(Cursor content) {
 		id = content.getLong(content.getColumnIndex("_id"));
 		Field[] fields = SQLHelper.getFields(getClass());
 		for (Field field : fields) {
