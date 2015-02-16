@@ -18,9 +18,10 @@ public abstract class TypeHandler<T> {
 		HANDLERS.put(int.class, new IntHandler());
 		HANDLERS.put(long.class, new LongHandler());
 		HANDLERS.put(boolean.class, new BooleanHandler());
+        HANDLERS.put(double.class, new DoubleHandler());
 		HANDLERS.put(String.class, new StringHandler());
 		HANDLERS.put(String[].class, new StringArrayHandler());
-		HANDLERS.put(byte[].class, new BytesHandler());
+        HANDLERS.put(byte[].class, new BytesHandler());
 		HANDLERS.put(Date.class, new DateHandler());
 	}
 
@@ -36,10 +37,14 @@ public abstract class TypeHandler<T> {
 
 	public static TypeHandler<?> getHandler(Field field) {
 		Type type = field.getGenericType();
-		if (HANDLERS.containsKey(type)) {
-			return HANDLERS.get(type);
-		}
-		Log.w("TypeHandler", "No handler found for " + type.toString());
+        if (HANDLERS.containsKey(type)) {
+            return HANDLERS.get(type);
+        }
+        type = field.getType();
+        if (HANDLERS.containsKey(type)) {
+            return HANDLERS.get(type);
+        }
+		Log.w("TypeHandler", "No handler found for " + field.toString() + " (" + field.getGenericType() + ") " + type);
 		System.out.println(HANDLERS);
 		return DEFAULT_HANDLER;
 	}
